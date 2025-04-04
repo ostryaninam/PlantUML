@@ -8,37 +8,40 @@ top to bottom direction
 Person(user, "User", "A user of the WarmHouse system")
 Person(admin, "Administrator", "An administrator managing the system")
 
-  Container_Boundary(User, "Users"){
-      Container(UserDB, "User Database","PostgreSQL","Stores user data")
-      Container(UserService, "User Service", "Java, Spring", "Service for user management")
-    }
-  Container_Boundary(SensorsControl, "Sensors control"){
-      Container(SensorsControlService, "Sensors Control Service", "Java, Spring", "Manages the sensors (temperature control, gates control, etc) and registration of them")
-      Container(SensorsDb, "Sensors Database","PostgreSQL", "Stores sensors data")
-    }
-  Container_Boundary(Scenarios, "Scenarios"){
-      Container(ScenarioService, "Scenario Service", "Java, Spring", "Service for programming and changing sensors scenarios")
-      Container(ScenarioDb, "Scenario Database","PostgreSQL", "Stores scenarios data")
-    }
-  Container_Boundary(Billing, "Billings"){
-        Container(BillingService, "Billing Service", "Java, Spring", "Service for subscriptions, billings and tariffs management")
-       Container(PaymentService, "Payment Service", "Node.js", "Processes payments")
-    }
-  Container_Boundary(SensorsMonitoring, "Sensors Monitoring"){
-           Container(SensorsMonitoringService, "Sensors Monitoring Service", "Java, Spring", "Monitoring data from sensors (temperature, house watching etc)")
-        Container(SensorsMonitoringDB, "Sensors Monitoring Database", "PostgreSQL", "Saves data from sensors")
-    }
+Container_Boundary(User, "Users"){
+  ContainerDb(UserDB, "User Database","PostgreSQL","Stores user data")
+  Container(UserService, "User Service", "Java, Spring", "Service for user management")
+}
+Container_Boundary(SensorsControl, "Sensors control"){
+  Container(SensorsControlService, "Sensors Control Service", "Java, Spring", "Manages the sensors (temperature control, gates control, etc) and registration of them")
+  ContainerDb(SensorsDb, "Sensors Database","PostgreSQL", "Stores sensors data")
+}
+Container_Boundary(Scenarios, "Scenarios"){
+  Container(ScenarioService, "Scenario Service", "Java, Spring", "Service for programming and changing sensors scenarios")
+  ContainerDb(ScenarioDb, "Scenario Database","PostgreSQL", "Stores scenarios data")
+}
+Container_Boundary(Billing, "Billings"){
+    Container(BillingService, "Billing Service", "Java, Spring", "Service for subscriptions, billings and tariffs management")
+   Container(PaymentService, "Payment Service", "Node.js", "Processes payments")
+}
+Container_Boundary(SensorsMonitoring, "Sensors Monitoring"){
+       Container(SensorsMonitoringService, "Sensors Monitoring Service", "Java, Spring", "Monitoring data from sensors (temperature, house watching etc)")
+    ContainerDb(SensorsMonitoringDB, "Sensors Monitoring Database", "Redis", "Saves data from sensors")
+}
    
-  Container(APIGateway, "API Gateway", "NGINX", "Balancing, auth, routing")
+Container(APIGateway, "API Gateway", "NGINX", "Balancing, auth, routing")
 
-  Container(SensorsMonitoringService, "Sensors Monitoring Service", "Java, Spring", "Monitoring data from sensors (temperature, house watching etc)")
-    
-  Container(Kafka, "Message Broker", "Kafka")
+System_Ext(GEODns, "GEODns", "Routing requests to geo clusters", "")
+System_Ext(FirebaseCloudMessaging, "Firebase Cloud Messaging", "Sending pushes to user", "")
+
+Container(SensorsMonitoringService, "Sensors Monitoring Service", "Java, Spring", "Monitoring data from sensors (temperature, house watching etc)")
+
+Container(Kafka, "Message Broker", "Kafka")
 
 System_Ext(sensors, "Sensors System", "External sensors system for data integration")
 System_Ext(bank, "Bank System", "External bank for processing payments")
 
-Rel(user, APIGateway, "Uses the system")
+Rel(user, GEODns, "Uses the system")
 
 Rel(PaymentService,bank,"Processes payments")
 
@@ -49,24 +52,28 @@ Rel(UserService,UserDB,"Save data")
 Rel(SensorsControlService,SensorsDb,"Save data")
 
 Rel(SensorsMonitoringService,Kafka,"Publish")
-Rel(SensorsMonitoringService,sensors,"Get data")
+Rel(SensorsMonitoringService,sensors,"Get data","Sensors protokol")
 Rel(SensorsMonitoringService,SensorsMonitoringDB,"Save data")
+Rel(SensorsMonitoringService,FirebaseCloudMessaging,"Send data")
+
 
 Rel(SensorsControlService, UserService, "Get data","REST")
-Rel(SensorsControlService, sensors, "REST")
+Rel(SensorsControlService, sensors, "Manage sensors","Sensors protokol")
 Rel(SensorsControlService, ScenarioService, "Get data","REST")
 Rel(SensorsControlService, SensorsMonitoringService, "Get data","REST")
 
-Rel(APIGateway,SensorsMonitoringService,"Get monitoring data","Websocket")
+Rel(APIGateway,SensorsMonitoringService,"Get monitoring data","REST")
 Rel(APIGateway,SensorsControlService,"Sensors control and registration","REST")
 Rel(APIGateway,BillingService,"Control billings","REST")
 Rel(APIGateway,ScenarioService,"Create scenarios","REST")
 Rel(APIGateway,UserService,"Users control","REST")
 
+Rel(GEODns,APIGateway,"Balance of requests")
+
 Rel(BillingService,PaymentService,"")
 
 Rel(Kafka,SensorsControlService,"Get events")
 
-Rel(admin,UserService,"Admin control of users")
+Rel(admin,GEODns,"Admin control of users")
 
 @enduml

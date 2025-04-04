@@ -1,0 +1,59 @@
+@startuml
+!define table(x) class x << (T,#FFAAAA) >>
+!define primary_key(x) <b>x</b>
+!define foreign_key(x) <i>x</i>
+
+title ERD - Sensors Control Service
+
+' ---------------------- Таблицы ----------------------
+
+table(User) {
+  primary_key(id): int
+  name: string
+  email: string
+}
+
+table(Sensor) {
+  primary_key(id): int
+  type: string
+  foreign_key(state_id): int
+  foreign_key(user_id): int
+}
+
+table(State) {
+  primary_key(id): int
+  moment: DateTime
+  state: enum
+}
+
+table(Scenario) {
+  primary_key(id): int
+  foreign_key(user_id): int
+}
+
+table(scenario_sensors) {
+  foreign_key(scenario_id): int
+  foreign_key(sensor_id): int
+}
+
+table(scenario_steps) {
+  foreign_key(scenario_id): int
+  foreign_key(sensor_id): int
+}
+
+table(Step) {
+  primary_key(id): int
+  sensorType: string
+  action: string
+}
+
+' ---------------------- Связи ----------------------
+
+User ||--o{ Sensor : "has"
+User ||--o{ Scenario : "has"
+
+Sensor ||--|| State : "has"
+Scenario }o--o{ Sensor : "uses\nvia scenario_sensors"
+Scenario }o--o{ Step : "uses\nvia scenario_steps"
+
+@enduml

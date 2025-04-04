@@ -1,0 +1,57 @@
+@startuml
+title FitLife Web Application Component Diagram
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+Container_Boundary(WarmHouse, "WarmHouse System") {
+    Container(SensorsControlService, "Sensors Control Service", "Java, Spring") {
+      Component(RegistrationController, "RegistrationController", "Handles registration of sensors")
+      Component(ManageController, "ManageController", "Managing of sensors")
+      Component(RegistrationService, "RegistrationService", "Registration and saving logic")
+      Component(ManageService, "ManageService", "Managing logic")
+      Component(MonitoringListener, "MonitoringListener", "Listens to monitoring data")
+      Component(ScenarioListener, "ScenarioListener", "Listens to scenario data")
+    }  
+    Container(SensorsMonitoringService, "Sensors Monitoring Service", "Java, Spring") {
+      Component(MonitoringController, "MonitoringController", "Handle get data requests")
+      Component(SensorsDataListener, "SensorsDataListener", "Sensors updates listening")
+      Component(SensorsPublisher, "SensorsPublisher", "Sensors data publish to Kafka and Redis")
+    }  
+    Container(ScenarioService, "Scenario Service", "Java, Spring") {
+      Component(ScenarioController, "ScenarioController", "Handles scenario creation and changes requests")
+      Component(ScenarioManager, "ScenarioManager", "Scenario managing and checking")
+      Component(ScenarioCreationService, "ScenarioCreationService", "Creating and saving scenarios")
+      Component(ScenarioEventPublisher, "ScenarioEventPublisher", "Publish scenario changes")
+    }  
+    Container(Kafka, "Kafka", "", "Message broker")
+}
+
+System_Ext(Sensors, "Sensors System", "", "")
+
+Rel(RegistrationController,RegistrationService,"Calls business logic")
+Rel(ManageController,ManageService,"Calls business logic")
+
+Rel(ManageService,ScenarioListener,"Listens to events")
+Rel(ManageService,MonitoringListener,"Listens to events")
+Rel(ManageService,Sensors,"Manages sensors")
+Rel(Kafka,ScenarioListener,"Listen to events")
+
+Rel(SensorsDataListener,Sensors,"Get sensors data")
+Rel(MonitoringController,SensorsDataListener,"Get sensors data")
+Rel(SensorsPublisher,SensorsDataListener,"")
+Rel(SensorsPublisher,Kafka,"Publish data")
+
+Rel(ScenarioController,ScenarioManager,"Calls business loogic")
+Rel(ScenarioController,ScenarioCreationService,"Calls business loogic")
+Rel(ScenarioEventPublisher,Kafka,"Publish events")
+Rel(ScenarioManager,ScenarioEventPublisher,"Publish events")
+
+Rel(Kafka,MonitoringListener,"Get data")
+
+ScenarioService -[hidden]-> Kafka
+Kafka -[hidden]-> SensorsControlService
+SensorsControlService -[hidden]-> SensorsMonitoringService
+
+@enduml
